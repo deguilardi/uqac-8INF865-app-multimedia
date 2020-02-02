@@ -1,4 +1,4 @@
-package com.example.myapplication;
+package ca.uqac.mysongs;
 
 import androidx.appcompat.app.AppCompatActivity;
 

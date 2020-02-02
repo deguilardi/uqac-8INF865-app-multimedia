@@ -1,4 +1,4 @@
-package com.example.myapplication;
+package ca.uqac.mysongs;
 
 import android.content.ContentResolver;
 import android.content.Context;
