@@ -30,10 +30,14 @@ class ListOfSongs {
             // @TODO must inform user
         }
         else {
-            cursor.moveToFirst();
-            do{
-                songs.add(new SongEntity(cursor));
-            } while (cursor.moveToNext());
+            if(cursor.getCount() == 0){
+                // @TODO must inform user
+            }
+            else {
+                while(cursor.moveToNext()){
+                    songs.add(new SongEntity(cursor));
+                }
+            }
             cursor.close();
         }
     }
