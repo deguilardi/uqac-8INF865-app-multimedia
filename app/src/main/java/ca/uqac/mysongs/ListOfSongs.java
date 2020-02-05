@@ -8,9 +8,9 @@ import android.provider.MediaStore;
 
 import java.util.ArrayList;
 
-public class ListOfSongs {
+class ListOfSongs {
 
-    private ArrayList<String> songs = new ArrayList<>();
+    private ArrayList<SongEntity> songs = new ArrayList<>();
 
     ListOfSongs(Context context){
         ContentResolver contentResolver = context.getContentResolver();
@@ -20,15 +20,25 @@ public class ListOfSongs {
 
         Cursor cursor = contentResolver.query(contentURI, new String[]{
                 MediaStore.Audio.Media.DATA,
-                MediaStore.Audio.Media.DISPLAY_NAME
-        }, null, null, sortOrder);
+                MediaStore.Audio.Media.DISPLAY_NAME,
+                MediaStore.Audio.Media.ALBUM,
+                MediaStore.Audio.Media.ARTIST
+        }, condition, null, sortOrder);
 
-        cursor.moveToFirst();
-        while(cursor.moveToNext()){
-            songs.add(cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Media.DISPLAY_NAME)));
+
+        if(cursor == null){
+            // @TODO must inform user
         }
-
-        int a = 1;
+        else {
+            cursor.moveToFirst();
+            do{
+                songs.add(new SongEntity(cursor));
+            } while (cursor.moveToNext());
+            cursor.close();
+        }
     }
 
+    ArrayList<SongEntity> getList(){
+        return songs;
+    }
 }
