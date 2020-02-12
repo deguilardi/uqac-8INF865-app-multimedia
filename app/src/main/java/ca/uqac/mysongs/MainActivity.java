@@ -12,13 +12,18 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
+import android.view.View;
+import android.widget.Button;
 import android.widget.ListView;
 
 public class MainActivity extends AppCompatActivity {
 
-    private ListView listView;
-    private ListOfSongs listOfSongs;
-    private SongsAdapter adapter;
+    private ListView mListView;
+    private ListOfSongs mListOfSongs;
+    private SongsAdapter mAdapter;
+
+    private Button mButtom;
+    private int mPlayerState;
 
     private final ServiceConnection mServiceConnection = new ServiceConnection(){
 
@@ -42,15 +47,8 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public boolean handleMessage( @NonNull Message message ){
             if( message.what == PlayerService.GET_STATE ){
-                int state = message.arg1;
-                switch( state ){
-                    case PlayerService.STATE_STOPPED:
-                        // @TODO
-                        break;
-                    case PlayerService.STATE_PLAYING:
-                        // @TODO
-                        break;
-                }
+                mPlayerState = message.arg1;
+                setupActionButtom();
             }
             return true;
         }
@@ -74,15 +72,38 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupUI(){
-        listView = findViewById(R.id.list);
-        listOfSongs = new ListOfSongs(this);
-        adapter = new SongsAdapter(this, listOfSongs.getList());
-        listView.setAdapter(adapter);
+        mButtom = findViewById( R.id.btnAction );
+        mListView = findViewById( R.id.list );
+        mListOfSongs = new ListOfSongs(this) ;
+        mAdapter = new SongsAdapter(this, mListOfSongs.getList() );
+        mListView.setAdapter( mAdapter );
+    }
+
+    private void setupActionButtom(){
+        switch( mPlayerState ){
+            case PlayerService.STATE_STOPPED:
+                mButtom.setText( "play" );
+                break;
+            case PlayerService.STATE_PLAYING:
+                mButtom.setText( "stop" );
+                break;
+        }
     }
 
     private void connectService(){
         Intent intent = new Intent( this, PlayerService.class );
         startService( intent );
         bindService( intent, mServiceConnection, 0 );
+    }
+
+    public void onHitAction( View view ){
+        switch( mPlayerState ){
+            case PlayerService.STATE_STOPPED:
+                // @TODO
+                break;
+            case PlayerService.STATE_PLAYING:
+                // @TODO
+                break;
+        }
     }
 }
