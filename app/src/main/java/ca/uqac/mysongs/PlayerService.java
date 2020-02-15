@@ -20,6 +20,9 @@ public class PlayerService extends Service {
     public final static int STATE_STOPPED = 0;
     public final static int STATE_PLAYING = 1;
     public final static int GET_STATE = 2;
+    public final static int PLAY_FILE = 3;
+    public final static int STOP = 4;
+    public final static String PARAM_SONG = "pSong";
 
     MediaPlayer mMediaPlayer = new MediaPlayer();
 
@@ -27,16 +30,22 @@ public class PlayerService extends Service {
 
         @Override
         public boolean handleMessage(@NonNull Message message){
+            Message returnMessage;
             switch( message.what ){
+                case STOP:
+                    stop();
+                    // no break here
                 case GET_STATE:
-                    try {
-                        int state = mMediaPlayer.isPlaying() ? STATE_PLAYING : STATE_STOPPED;
-                        Message returnMessage = Message.obtain(null, GET_STATE, state, 0);
-                        final Bundle bundle = new Bundle();
-                        returnMessage.setData( bundle );
-                        message.replyTo.send( returnMessage );
-                    }
-                    catch( RemoteException ignore ){}
+                    int state = mMediaPlayer != null && mMediaPlayer.isPlaying() ? STATE_PLAYING : STATE_STOPPED;
+                    returnMessage = Message.obtain(null, GET_STATE, state, 0);
+                    sendMessage( message, returnMessage );
+                    break;
+                case PLAY_FILE:
+                    Bundle bundle = message.getData();
+                    SongEntity song = bundle.getParcelable( PARAM_SONG );
+                    play(song.getData());
+                    returnMessage = Message.obtain(null, GET_STATE, STATE_PLAYING, 0);
+                    sendMessage( message, returnMessage );
                     break;
             }
             return true;
@@ -50,12 +59,17 @@ public class PlayerService extends Service {
         return mMessenger.getBinder();
     }
 
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        return START_STICKY;
+    }
 
-    void play( String path ){
+    void play(String path ){
         stop();
         File file = new File(path);
         Uri uri = Uri.fromFile( file);
         mMediaPlayer = MediaPlayer.create( getApplicationContext(), uri );
+        resume();
     }
 
     void resume(){
@@ -71,9 +85,18 @@ public class PlayerService extends Service {
     }
 
     void stop(){
-        if( mMediaPlayer.isPlaying() ) {
+        if( mMediaPlayer != null && mMediaPlayer.isPlaying() ) {
             mMediaPlayer.stop();
             mMediaPlayer.release();
+            mMediaPlayer = null;
         }
+    }
+
+    private void sendMessage( Message message, Message returnMessage ){
+        try {
+            message.replyTo.send( returnMessage );
+        }
+        catch( RemoteException ignore ){}
+
     }
 }

@@ -6,6 +6,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
@@ -16,6 +17,7 @@ import android.os.Messenger;
 import android.os.RemoteException;
 import android.view.View;
 import android.widget.Button;
+import android.widget.Toast;
 
 import static java.security.AccessController.getContext;
 
@@ -32,13 +34,9 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void onServiceConnected( ComponentName name, IBinder service ){
-            Messenger messenger = new Messenger(service);
-            try {
-                Message message = Message.obtain(null, PlayerService.GET_STATE);
-                message.replyTo = mMessenger;
-                messenger.send(message);
-            }
-            catch( RemoteException ignore ){}
+            mMessengerSender = new Messenger(service);
+            Message message = Message.obtain(null, PlayerService.GET_STATE);
+            sendMessage( message );
         }
 
         @Override
@@ -57,7 +55,8 @@ public class MainActivity extends AppCompatActivity {
         }
     });
 
-    final Messenger mMessenger = new Messenger(mIncomingHandler);
+    final Messenger mMessengerReceiver = new Messenger(mIncomingHandler);
+    Messenger mMessengerSender = null;
 
 
     @Override
@@ -78,11 +77,17 @@ public class MainActivity extends AppCompatActivity {
         mButtom = findViewById( R.id.btnAction );
         mRecyclerView = findViewById( R.id.list );
         mListOfSongs = new ListOfSongs(this) ;
+        final Context context = this;
         mAdapter = new SongsAdapter(this, mListOfSongs.getList(), new SongsAdapter.OnClickHandler(){
 
             @Override
             public void onClick(SongEntity song, SongsAdapter.ViewHolder adapterViewHolder) {
-                int a = 123;
+                Message message = Message.obtain(null, PlayerService.PLAY_FILE);
+                message.replyTo = mMessengerReceiver;
+                final Bundle bundle = new Bundle();
+                bundle.putParcelable( PlayerService.PARAM_SONG, song );
+                message.setData( bundle );
+                sendMessage( message );
             }
         });
         mRecyclerView.setAdapter( mAdapter );
@@ -91,10 +96,12 @@ public class MainActivity extends AppCompatActivity {
     private void setupActionButtom(){
         switch( mPlayerState ){
             case PlayerService.STATE_STOPPED:
-                mButtom.setText( "play" );
+                mButtom.setText( "select a song" );
+                mButtom.setEnabled(false);
                 break;
             case PlayerService.STATE_PLAYING:
                 mButtom.setText( "stop" );
+                mButtom.setEnabled(true);
                 break;
         }
     }
@@ -102,7 +109,9 @@ public class MainActivity extends AppCompatActivity {
     private void connectService(){
         Intent intent = new Intent( this, PlayerService.class );
         startService( intent );
-        bindService( intent, mServiceConnection, 0 );
+        if(bindService( intent, mServiceConnection, 0 )){
+            Toast.makeText(this, "Initialization error", Toast.LENGTH_SHORT).show();
+        }
     }
 
     public void onHitAction( View view ){
@@ -111,8 +120,20 @@ public class MainActivity extends AppCompatActivity {
                 // @TODO
                 break;
             case PlayerService.STATE_PLAYING:
-                // @TODO
+                Message message = Message.obtain(null, PlayerService.STOP);
+                sendMessage( message );
                 break;
         }
+    }
+
+    private void sendMessage( Message message ){
+        message.replyTo = mMessengerReceiver;
+        try {
+            mMessengerSender.send( message );
+        }
+        catch( RemoteException e ){
+            Toast.makeText(this, "Couldn't communicate to service", Toast.LENGTH_SHORT).show();
+        }
+
     }
 }
