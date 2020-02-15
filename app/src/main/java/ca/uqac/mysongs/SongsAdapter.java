@@ -1,88 +1,68 @@
 package ca.uqac.mysongs;
 
 import android.content.Context;
-import android.database.DataSetObserver;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ListAdapter;
 import android.widget.TextView;
+
+import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
 
-public class SongsAdapter implements ListAdapter {
+public class SongsAdapter extends RecyclerView.Adapter<SongsAdapter.ViewHolder> {
 
-    private Context context;
-    private ArrayList<SongEntity> songs;
+    private Context mContext;
+    private ArrayList<SongEntity> mSongs;
 
-    SongsAdapter(Context context, ArrayList<SongEntity> songs){
-        this.context = context;
-        this.songs = songs;
+    final private OnClickHandler mClickHandler;
+
+    public interface OnClickHandler {
+        void onClick(SongEntity song, SongsAdapter.ViewHolder adapterViewHolder);
+    }
+
+    SongsAdapter(Context context, ArrayList<SongEntity> songs, OnClickHandler clickHandler){
+        mContext = context;
+        mSongs = songs;
+        mClickHandler = clickHandler;
+    }
+
+    @NonNull
+    @Override
+    public ViewHolder onCreateViewHolder(@NonNull ViewGroup viewGroup, int i) {
+        View view = LayoutInflater.from(mContext).inflate(R.layout.item_song, viewGroup, false);
+        return new ViewHolder(view);
     }
 
     @Override
-    public boolean areAllItemsEnabled() {
-        return false;
+    public void onBindViewHolder(@NonNull ViewHolder viewHolder, int position) {
+        viewHolder.setTitle( mSongs.get( position ).getName() );
     }
 
     @Override
-    public boolean isEnabled(int position) {
-        return false;
+    public int getItemCount() {
+        return mSongs.size();
     }
 
-    @Override
-    public void registerDataSetObserver(DataSetObserver observer) {
+    class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener{
 
-    }
+        TextView mTitle;
 
-    @Override
-    public void unregisterDataSetObserver(DataSetObserver observer) {
-
-    }
-
-    @Override
-    public int getCount() {
-        return songs.size();
-    }
-
-    @Override
-    public SongEntity getItem(int position) {
-        return songs.get(position);
-    }
-
-    @Override
-    public long getItemId(int position) {
-        return songs.get(position).hashCode();
-    }
-
-    @Override
-    public boolean hasStableIds() {
-        return false;
-    }
-
-    @Override
-    public View getView(int position, View convertView, ViewGroup parent) {
-        if (convertView == null) {
-            LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-            convertView = inflater.inflate(R.layout.item_song, null);
-            TextView title = convertView.findViewById(R.id.title);
-            title.setText(songs.get(position).getName());
+        ViewHolder(@NonNull View itemView) {
+            super(itemView);
+            mTitle = itemView.findViewById(R.id.title);
+            itemView.setOnClickListener(this);
         }
-        return convertView;
-    }
 
-    @Override
-    public int getItemViewType(int position) {
-        return 0;
-    }
+        void setTitle( String title ){
+            mTitle.setText( title );
+        }
 
-    @Override
-    public int getViewTypeCount() {
-        return 1;
-    }
-
-    @Override
-    public boolean isEmpty() {
-        return false;
+        @Override
+        public void onClick(View v) {
+            int position = getAdapterPosition();
+            mClickHandler.onClick(mSongs.get( position ) , this);
+        }
     }
 }

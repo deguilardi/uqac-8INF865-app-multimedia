@@ -2,6 +2,8 @@ package ca.uqac.mysongs;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import android.content.ComponentName;
 import android.content.Intent;
@@ -14,11 +16,12 @@ import android.os.Messenger;
 import android.os.RemoteException;
 import android.view.View;
 import android.widget.Button;
-import android.widget.ListView;
+
+import static java.security.AccessController.getContext;
 
 public class MainActivity extends AppCompatActivity {
 
-    private ListView mListView;
+    private RecyclerView mRecyclerView;
     private ListOfSongs mListOfSongs;
     private SongsAdapter mAdapter;
 
@@ -73,10 +76,16 @@ public class MainActivity extends AppCompatActivity {
 
     private void setupUI(){
         mButtom = findViewById( R.id.btnAction );
-        mListView = findViewById( R.id.list );
+        mRecyclerView = findViewById( R.id.list );
         mListOfSongs = new ListOfSongs(this) ;
-        mAdapter = new SongsAdapter(this, mListOfSongs.getList() );
-        mListView.setAdapter( mAdapter );
+        mAdapter = new SongsAdapter(this, mListOfSongs.getList(), new SongsAdapter.OnClickHandler(){
+
+            @Override
+            public void onClick(SongEntity song, SongsAdapter.ViewHolder adapterViewHolder) {
+                int a = 123;
+            }
+        });
+        mRecyclerView.setAdapter( mAdapter );
     }
 
     private void setupActionButtom(){
